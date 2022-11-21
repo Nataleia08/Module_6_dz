@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import os
 
 
 def translate_name_file(name):
@@ -18,23 +19,36 @@ def replacement_symbols_file_name(name):
     list_name = list(name)
     i = 0
     for n in list_name:
-        if (not n.isalpha()) or (not n.isdigit()):
+        if (not n.isalpha()) and (not n.isdigit()):
             list_name[i] = "_"
         i = i + 1
     new_name = "".join(list_name)
     return new_name
 
 
-def normalize(path):
-    full_name = path.name()
-    list_name = ".".split(full_name)
-    list_name[0] = translate_name_file(list_name[0])
-    list_name[0] = replacement_symbols_file_name(list_name[0])
-    new_name = ".".join(list_name)
-    path.rename(new_name)
+def normalize(path: Path):
+    if path.is_dir():
+        full_name = path.name
+        full_transtale_name = translate_name_file(full_name)
+        full_clear_name = replacement_symbols_file_name(full_transtale_name)
+        if full_clear_name != full_name:
+            return path.replace(full_clear_name)
+        else:
+            return path
+    elif path.is_file():
+        full_name = path.name
+        list_name = full_name.split(".")
+        list_name[0] = translate_name_file(list_name[0])
+        list_name[0] = replacement_symbols_file_name(list_name[0])
+        new_name = ".".join(list_name)
+        if new_name != full_name:
+            new_path = path.parent / new_name
+            return path.replace(new_path)
+        else:
+            return path
 
 
-def delete(path):
+def delete(path: Path):
     try:
         path.rmdir()
     except OSError as e:
@@ -42,53 +56,60 @@ def delete(path):
             f'Не вдалось видалити порожню папку за шляхом {path}. Помилка: {e.strerror}')
 
 
-def sorting(path, video_path, archive_path, audio_path, document_path, image_path):
+def sorting(path: Path, video_path: Path, archive_path: Path, audio_path: Path, document_path: Path, image_path: Path):
     unknown_list = []
     known_list = []
-    normalize(path)
-    if not len(p.iterdir()):
+    path = normalize(path)
+    if not len(os.listdir(path)):
         delete(p)
     for i in p.iterdir():
-        if i.is_dir:
-            sorting(i, video_path, archive_path,
-                    audio_path, document_path, image_path)
+        if i.is_dir():
+            l = sorting(i, video_path, archive_path,
+                        audio_path, document_path, image_path)
+            unknown_list.extend(l[0])
+            known_list.extend(l[0])
         else:
-            normalize(i)
-            p_name = i.name()
-            list_name = p_name.split(".")
-            if (list_name[1] == "jpg") or (list_name[1] == "png") or (list_name[1] == "jpeg") or (list_name[1] == "svg"):
-                known_list.append(list_name[1])
+            i = normalize(i)
+            i_roz_with = i.name.split(".")
+            i_roz = i_roz_with[1]
+            if (i_roz == "jpg") or (i_roz == "png") or (i_roz == "jpeg") or (i_roz == "svg"):
+                known_list.append(i_roz)
                 shutil.move(i, image_path)
-            elif (list_name[1] == "avi") or (list_name[1] == "mp4") or (list_name[1] == "mov") or (list_name[1] == "mkv"):
+            elif (i_roz == "avi") or (i_roz == "mp4") or (i_roz == "mov") or (i_roz == "mkv"):
                 shutil.move(i, video_path)
-                known_list.append(list_name[1])
-            elif (list_name[1] == "doc") or (list_name[1] == "docx") or (list_name[1] == "txt") or (list_name[1] == "pdf") or (list_name[1] == "rtf") or (list_name[1] == "xslx") or (list_name[1] == "slx") or (list_name[1] == "pptx") or (list_name[1] == "ppt"):
+                known_list.append(i_roz)
+            elif (i_roz == "doc") or (i_roz == "docx") or (i_roz == "txt") or (i_roz == "pdf") or (i_roz == "rtf") or (i_roz == "xslx") or (i_roz == "slx") or (i_roz == "pptx") or (i_roz == "ppt"):
                 shutil.move(i, document_path)
-                known_list.append(list_name[1])
-            elif (list_name[1] == "mp3") or (list_name[1] == "ogg") or (list_name[1] == "wav") or (list_name[1] == "amr"):
+                known_list.append(i_roz)
+            elif (i_roz == "mp3") or (i_roz == "ogg") or (i_roz == "wav") or (i_roz == "amr"):
                 shutil.move(i, audio_path)
-                known_list.append(list_name[1])
-            elif (list_name[1] == "zip") or (list_name[1] == "tar") or (list_name[1] == "gz"):
+                known_list.append(i_roz)
+            elif (i_roz == "zip") or (i_roz == "tar") or (i_roz == "gz"):
                 shutil.move(i, archive_path)
-                arh_p = i + "/" + list_name[0]
+                arh_p = i + "/" + i_roz_with[0]
                 shutil.unpack_archive(arh_p)
-                known_list.append(list_name[1])
+                known_list.append(i_roz)
             else:
-                unknown_list.append(list_name[1])
+                unknown_list.append(i_roz)
+    return [unknown_list, known_list]
 
 
 p = Path(input("Введіть шлях до папки:"))
-if not p.is_dir:
-    print("Це не шлях до папки!")
+if p.is_dir():
+    video_path = p / 'video'
+    video_path.mkdir(exist_ok=True)
+    archive_path = p / "archives"
+    archive_path.mkdir(exist_ok=True)
+    audio_path = p / "audio"
+    audio_path.mkdir(exist_ok=True)
+    document_path = p / "documents"
+    document_path.mkdir(exist_ok=True)
+    image_path = p / "images"
+    image_path.mkdir(exist_ok=True)
+    result = sorting(p, video_path, archive_path,
+                     audio_path, document_path, image_path)
+    print("Сортування виконано успішно!")
+    print("Список відомих розширень файлів у папці:", result[1])
+    print("Список невідомих розширень у папці:", l[0])
 else:
-    video_path = p / '/video'
-    video_path.mkdir()
-    archive_path = p / "/archives"
-    archive_path.mkdir()
-    audio_path = p / "/audio"
-    audio_path.mkdir()
-    document_path = p / "/documents"
-    document_path.mkdir()
-    image_path = p / "/images"
-    image_path.mkdir()
-    sorting(p, video_path, archive_path, audio_path, document_path, image_path)
+    print("Це не шлях до папки!")
