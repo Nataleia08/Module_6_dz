@@ -61,37 +61,39 @@ def sorting(path: Path, video_path: Path, archive_path: Path, audio_path: Path, 
     known_list = []
     path = normalize(path)
     if not len(os.listdir(path)):
-        delete(p)
-    for i in p.iterdir():
-        if i.is_dir():
-            l = sorting(i, video_path, archive_path,
-                        audio_path, document_path, image_path)
-            unknown_list.extend(l[0])
-            known_list.extend(l[0])
-        else:
-            i = normalize(i)
-            i_roz_with = i.name.split(".")
-            i_roz = i_roz_with[1]
-            if (i_roz == "jpg") or (i_roz == "png") or (i_roz == "jpeg") or (i_roz == "svg"):
-                known_list.append(i_roz)
-                shutil.move(i, image_path)
-            elif (i_roz == "avi") or (i_roz == "mp4") or (i_roz == "mov") or (i_roz == "mkv"):
-                shutil.move(i, video_path)
-                known_list.append(i_roz)
-            elif (i_roz == "doc") or (i_roz == "docx") or (i_roz == "txt") or (i_roz == "pdf") or (i_roz == "rtf") or (i_roz == "xslx") or (i_roz == "slx") or (i_roz == "pptx") or (i_roz == "ppt"):
-                shutil.move(i, document_path)
-                known_list.append(i_roz)
-            elif (i_roz == "mp3") or (i_roz == "ogg") or (i_roz == "wav") or (i_roz == "amr"):
-                shutil.move(i, audio_path)
-                known_list.append(i_roz)
-            elif (i_roz == "zip") or (i_roz == "tar") or (i_roz == "gz"):
-                shutil.move(i, archive_path)
-                arh_p = i + "/" + i_roz_with[0]
-                shutil.unpack_archive(arh_p)
-                known_list.append(i_roz)
+        delete(path)
+        return []
+    else:
+        for i in path.iterdir():
+            if i.is_dir():
+                l = sorting(i, video_path, archive_path,
+                            audio_path, document_path, image_path)
+                unknown_list.extend(l[0])
+                known_list.extend(l[1])
             else:
-                unknown_list.append(i_roz)
-    return [unknown_list, known_list]
+                i = normalize(i)
+                i_roz_with = i.name.split(".")
+                i_roz = i_roz_with[1]
+                if (i_roz == "jpg") or (i_roz == "png") or (i_roz == "jpeg") or (i_roz == "svg"):
+                    known_list.append(i_roz)
+                    shutil.move(i, image_path)
+                elif (i_roz == "avi") or (i_roz == "mp4") or (i_roz == "mov") or (i_roz == "mkv"):
+                    shutil.move(i, video_path)
+                    known_list.append(i_roz)
+                elif (i_roz == "doc") or (i_roz == "docx") or (i_roz == "txt") or (i_roz == "pdf") or (i_roz == "rtf") or (i_roz == "xslx") or (i_roz == "slx") or (i_roz == "pptx") or (i_roz == "ppt"):
+                    shutil.move(i, document_path)
+                    known_list.append(i_roz)
+                elif (i_roz == "mp3") or (i_roz == "ogg") or (i_roz == "wav") or (i_roz == "amr"):
+                    shutil.move(i, audio_path)
+                    known_list.append(i_roz)
+                elif (i_roz == "zip") or (i_roz == "tar") or (i_roz == "gz"):
+                    shutil.move(i, archive_path)
+                    arh_p = i + "/" + i_roz_with[0]
+                    shutil.unpack_archive(arh_p)
+                    known_list.append(i_roz)
+                else:
+                    unknown_list.append(i_roz)
+        return [unknown_list, known_list]
 
 
 p = Path(input("Введіть шлях до папки:"))
@@ -110,6 +112,6 @@ if p.is_dir():
                      audio_path, document_path, image_path)
     print("Сортування виконано успішно!")
     print("Список відомих розширень файлів у папці:", result[1])
-    print("Список невідомих розширень у папці:", l[0])
+    print("Список невідомих розширень у папці:", result[0])
 else:
     print("Це не шлях до папки!")
