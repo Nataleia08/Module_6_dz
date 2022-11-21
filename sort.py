@@ -1,7 +1,37 @@
 from pathlib import Path
 
 
+def translate_name_file(name):
+    CYRILLIC_SYMBOLS = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяєіїґАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЄІЇҐ"
+    TRANSLATION = ("a", "b", "v", "g", "d", "e", "e", "j", "z", "i", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
+                   "f", "h", "ts", "ch", "sh", "sch", "", "y", "", "e", "yu", "ya", "je", "i", "ji", "g", "A", "B", "V", "G", "D", "E", "E", "J", "Z", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U",
+                   "F", "H", "Ts", "Ch", "Sh", "Sch", "E", "Yu", "Ya", "Je", "I", "Ji", "G")
+    TRANS = {}
+    for c, l in zip(CYRILLIC_SYMBOLS, TRANSLATION):
+        TRANS[ord(c)] = l
+    new_name = name.translate(TRANS)
+    return new_name
+
+
+def replacement_symbols_file_name(name):
+    list_name = list(name)
+    i = 0
+    for n in list_name:
+        if not i.isalpha():
+            list_name[i] = "_"
+        i = i + 1
+    new_name = "".join(list_name)
+    return new_name
+
+
 def normalize(path):
+        full_file_name = path.name()
+        list_file_name = ".".split(full_file_name)
+        list_file_name[0] = translate_name_file(list_file_name[0])
+        list_file_name[0] = replacement_symbols_file_name(list_file_name[0])
+        new_file_name = ".".join(list_file_name)
+        new_path = path + "/" + new_file_name
+
     return new_path
 
 
