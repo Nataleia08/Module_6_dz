@@ -3,7 +3,7 @@ import shutil
 import os
 
 
-def translate_name_file(name):
+def translate_name_file(name) -> str:
     CYRILLIC_SYMBOLS = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяєіїґАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЄІЇҐ"
     TRANSLATION = ("a", "b", "v", "g", "d", "e", "e", "j", "z", "i", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u",
                    "f", "h", "ts", "ch", "sh", "sch", "", "y", "", "e", "yu", "ya", "je", "i", "ji", "g", "A", "B", "V", "G", "D", "E", "E", "J", "Z", "I", "J", "K", "L", "M", "N", "O", "P", "R", "S", "T", "U",
@@ -15,7 +15,7 @@ def translate_name_file(name):
     return new_name
 
 
-def replacement_symbols_file_name(name):
+def replacement_symbols_file_name(name) -> str:
     list_name = list(name)
     i = 0
     for n in list_name:
@@ -26,13 +26,19 @@ def replacement_symbols_file_name(name):
     return new_name
 
 
-def normalize(path: Path):
+def normalize(path: Path) -> Path:
     if path.is_dir():
         full_name = path.name
         full_transtale_name = translate_name_file(full_name)
         full_clear_name = replacement_symbols_file_name(full_transtale_name)
         if full_clear_name != full_name:
-            return path.replace(full_clear_name)
+            try:
+                new_path = os.path.join(path.parent, full_clear_name)
+                os.rename(path, new_path)
+                return Path(new_path)
+            except OSError as e:
+                print(f"Папку {path} не перейменовано! Причина: {e.strerror}")
+                return path
         else:
             return path
     elif path.is_file():
@@ -42,8 +48,13 @@ def normalize(path: Path):
         list_name[0] = replacement_symbols_file_name(list_name[0])
         new_name = ".".join(list_name)
         if new_name != full_name:
-            new_path = path.parent / new_name
-            return path.replace(new_path)
+            try:
+                new_path = os.path.join(path.parent, new_name)
+                os.rename(path, new_path)
+                return Path(new_path)
+            except OSError as e:
+                print(f"Файл {path} не перейменовано! Причина: {e.strerror}")
+                return path
         else:
             return path
 
@@ -56,39 +67,44 @@ def delete(path: Path):
             f'Не вдалось видалити порожню папку за шляхом {path}. Помилка: {e.strerror}')
 
 
-def sorting(path: Path, video_path: Path, archive_path: Path, audio_path: Path, document_path: Path, image_path: Path):
+def sorting(path: Path, video_path: Path, archive_path: Path, audio_path: Path, document_path: Path, image_path: Path) -> list:
     unknown_list = []
     known_list = []
-    path = normalize(path)
     if not len(os.listdir(path)):
         delete(path)
         return []
     else:
         for i in path.iterdir():
-            if i.is_dir():
-                l = sorting(i, video_path, archive_path,
+            if (i.name == "video") or (i.name == "audio") or (i.name == "archives") or (i.name == "documents") or (i.name == "images"):
+                continue
+            i_path = path / i
+            if i_path.is_dir():
+                new_path = normalize(i_path)
+                l = sorting(new_path, video_path, archive_path,
                             audio_path, document_path, image_path)
-                unknown_list.extend(l[0])
-                known_list.extend(l[1])
+                if len(l):
+                    unknown_list.extend(l[0])
+                    known_list.extend(l[1])
             else:
-                i = normalize(i)
-                i_roz_with = i.name.split(".")
-                i_roz = i_roz_with[1]
+                i_new = normalize(i_path)
+                #i_roz_with = i_new.name.split(".")
+                i_roz = i_new.suffix.removeprefix(".")
                 if (i_roz == "jpg") or (i_roz == "png") or (i_roz == "jpeg") or (i_roz == "svg"):
                     known_list.append(i_roz)
-                    shutil.move(i, image_path)
+                    shutil.move(i_new, image_path)
                 elif (i_roz == "avi") or (i_roz == "mp4") or (i_roz == "mov") or (i_roz == "mkv"):
-                    shutil.move(i, video_path)
+                    shutil.move(i_new, video_path)
                     known_list.append(i_roz)
-                elif (i_roz == "doc") or (i_roz == "docx") or (i_roz == "txt") or (i_roz == "pdf") or (i_roz == "rtf") or (i_roz == "xslx") or (i_roz == "slx") or (i_roz == "pptx") or (i_roz == "ppt"):
-                    shutil.move(i, document_path)
+                elif (i_roz == "doc") or (i_roz == "docx") or (i_roz == "txt") or (i_roz == "pdf") or (i_roz == "rtf") or (i_roz == "xlsx") or (i_roz == "xls") or (i_roz == "pptx") or (i_roz == "ppt"):
+                    shutil.move(i_new, document_path)
                     known_list.append(i_roz)
                 elif (i_roz == "mp3") or (i_roz == "ogg") or (i_roz == "wav") or (i_roz == "amr"):
-                    shutil.move(i, audio_path)
+                    shutil.move(i_new, audio_path)
                     known_list.append(i_roz)
-                elif (i_roz == "zip") or (i_roz == "tar") or (i_roz == "gz"):
-                    shutil.move(i, archive_path)
-                    arh_p = i + "/" + i_roz_with[0]
+                elif (i_roz == "zip") or (i_roz == "tar") or (i_roz == "gz") or (i_roz == "rar"):
+                    shutil.move(i_new, archive_path)
+                    arh_p = archive_path / \
+                        i_new.name.removesuffix(i_new.suffix)
                     shutil.unpack_archive(arh_p)
                     known_list.append(i_roz)
                 else:
