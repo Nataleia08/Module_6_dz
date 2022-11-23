@@ -76,7 +76,7 @@ def delete(path: Path):
             f'Не вдалось видалити порожню папку за шляхом {path}. Помилка: {e.strerror}')
 
 
-def sorting(path: Path, video_path: Path, archive_path: Path, audio_path: Path, document_path: Path, image_path: Path) -> list:
+def sorting(path: Path, list_path) -> list:
     """Функція сортування папок та файлів"""
 
     unknown_list = set()
@@ -92,8 +92,7 @@ def sorting(path: Path, video_path: Path, archive_path: Path, audio_path: Path, 
             i_path = new_path_name / i
             if i_path.is_dir():
                 new_path = normalize(i_path)
-                l = sorting(new_path, video_path, archive_path,
-                            audio_path, document_path, image_path)
+                l = sorting(new_path, list_path)
                 if len(l):
                     unknown_list.union(l[0])
                     known_list.union(l[1])
@@ -104,39 +103,39 @@ def sorting(path: Path, video_path: Path, archive_path: Path, audio_path: Path, 
                 if (i_roz == "jpg") or (i_roz == "png") or (i_roz == "jpeg") or (i_roz == "svg") or (i_roz == "bmp"):
                     known_list.add(i_roz)
                     try:
-                        move(i_new, image_path)
+                        move(i_new, list_path[0][4])
                     except OSError as e:
                         print(
                             f"Не вдалося перемістити файл {i_new.name}. Помилка: {e.strerror}")
                 elif (i_roz == "avi") or (i_roz == "mp4") or (i_roz == "mov") or (i_roz == "mkv"):
                     known_list.add(i_roz)
                     try:
-                        move(i_new, video_path)
+                        move(i_new, list_path[0][0])
                     except OSError as e:
                         print(
                             f"Не вдалося перемістити файл {i_new.name}. Помилка: {e.strerror}")
                 elif (i_roz == "doc") or (i_roz == "docx") or (i_roz == "txt") or (i_roz == "pdf") or (i_roz == "rtf") or (i_roz == "xlsx") or (i_roz == "xls") or (i_roz == "pptx") or (i_roz == "ppt") or (i_roz == "vsdx"):
                     known_list.add(i_roz)
                     try:
-                        move(i_new, document_path)
+                        move(i_new, list_path[0][3])
                     except OSError as e:
                         print(
                             f"Не вдалося перемістити файл {i_new.name}. Помилка: {e.strerror}")
                 elif (i_roz == "mp3") or (i_roz == "ogg") or (i_roz == "wav") or (i_roz == "amr"):
                     known_list.add(i_roz)
                     try:
-                        move(i_new, audio_path)
+                        move(i_new, list_path[0][2])
                     except OSError as e:
                         print(
                             f"Не вдалося перемістити файл {i_new.name}. Помилка: {e.strerror}")
                 elif (i_roz == "zip") or (i_roz == "tar") or (i_roz == "gz") or (i_roz == "rar") or (i_roz == "ZIP") or (i_roz == "7z"):
                     try:
-                        move(i_new, archive_path)
+                        move(i_new, list_path[0][1])
                     except OSError as e:
                         print(
                             f"Не вдалось перемістити файл {i_new.name}. Помилка: {e.strerror}")
                     try:
-                        arh_p = archive_path / \
+                        arh_p = list_path[0][1] / \
                             i_new.name.removesuffix(i_new.suffix)
                         unpack_archive(arh_p)
                     except OSError as e:
@@ -148,3 +147,47 @@ def sorting(path: Path, video_path: Path, archive_path: Path, audio_path: Path, 
     if not len(listdir(path)):
         delete(new_path_name)
     return [unknown_list, known_list]
+
+
+def creating_folder(path: Path) -> list:
+    """Створення папок для перенесення файлів"""
+# -----------Створення папок для відео-----------
+    video_path = path / 'video'
+    video_path.mkdir(exist_ok=True)
+    list_video_path = ['AVI', 'MP4', 'MOV', 'MKV']
+    for name_path in list_video_path:
+        pod_video_path = video_path / name_path
+        pod_video_path.mkdir(exist_ok=True)
+    # ------Створення папок для архівів--------------
+    archive_path = path / "archives"
+    zip_path = archive_path / 'ZIP'
+    list_arhive_path = ['RAR', '7Z', 'TAR', 'GZ']
+    for name_path in list_arhive_path:
+        pod_video_path = archive_path / name_path
+        pod_video_path.mkdir(exist_ok=True)
+    # ------Створення папок для аудио-файлів--------------
+    audio_path = path / "audio"
+    audio_path.mkdir(exist_ok=True)
+    list_audio_path = ['MP3', 'OGG', 'WAV', 'AMR']
+    for name_path in list_audio_path:
+        pod_video_path = audio_path / name_path
+        pod_video_path.mkdir(exist_ok=True)
+    # ------Створення папок для документів--------------
+    document_path = path / "documents"
+    document_path.mkdir(exist_ok=True)
+    list_docum_path = ['DOC', 'DOCX', 'TXT', 'PDF', 'XLSX', 'PPTX']
+    for name_path in list_docum_path:
+        pod_video_path = document_path / name_path
+        pod_video_path.mkdir(exist_ok=True)
+    # ------Створення папок для зображень--------------
+    image_path = path / "images"
+    image_path.mkdir(exist_ok=True)
+    list_images_path = ['JPEG', 'PNG', 'JPG', 'SVG']
+    for name_path in list_docum_path:
+        pod_video_path = image_path / name_path
+        pod_video_path.mkdir(exist_ok=True)
+    main_list_dir = [video_path, archive_path,
+                     audio_path, document_path, image_path]
+    list_path = [list_video_path, list_video_path,
+                 list_audio_path, list_docum_path, list_images_path]
+    return [main_list_dir, list_path]
