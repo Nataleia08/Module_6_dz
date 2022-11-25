@@ -77,7 +77,7 @@ def delete(path: Path):
 
 
 def move_files(path: Path, type_files: int, list_path: list):
-    """Функция сортування зображень"""
+    """Функция сортування файлів по папкам"""
     i_roz = path.suffix.removeprefix(".")
     for i_path in list_path[1][type_files]:
         if i_roz == i_path.lower():
