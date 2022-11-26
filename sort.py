@@ -1,7 +1,4 @@
 from pathlib import Path
-# from os import rename, listdir
-# from shutil import move, unpack_archive
-# from os.path import join
 import function
 
 
